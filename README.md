@@ -1,7 +1,7 @@
 
-# Gaz_hafi IoT Loyihasi
+# Xavsizlik-qurilmasi  IoT Loyihasi
 
-Bu kod Hoshimov Ozodbek Huanivch tomonidan yaratilgan va patentlangan manba
+Bu kod `Hoshimov Ozodbek Huanivch` tomonidan yaratilgan va patentlangan manba
 
 Bu kodalarda Arduino va ESP8266 modullarini birlashtirgan bir IoT loyihasi mavjud. Ushbu loyiha uyg'unlik sensorlardan malumot olish, ularni ESP8266 moduli orqali bir serverga yuborish, serverdan esa web brauzer orqali bu malumotlarni ko'rish imkoniyatini beradi.
 
