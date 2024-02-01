@@ -1,7 +1,11 @@
 
 # Xavsizlik-qurilmasi  IoT Loyihasi
 
-Bu kod `Hoshimov Ozodbek Huanivch` tomonidan yaratilgan va patentlangan manba
+# Gaz Yongin Zilzila Havo bolsimi va boshqalar orqali uyingizni  nazorat qiluvchi qurilma codi
+
+# No qonunni kochirmalar jinoyi javobgarlika sabap bolishi mumkun !!!
+
+Bu code `Hoshimov Ozodbek Huanivch` tomonidan yaratilgan va patentlangan manba
 
 Bu kodalarda Arduino va ESP8266 modullarini birlashtirgan bir IoT loyihasi mavjud. Ushbu loyiha uyg'unlik sensorlardan malumot olish, ularni ESP8266 moduli orqali bir serverga yuborish, serverdan esa web brauzer orqali bu malumotlarni ko'rish imkoniyatini beradi.
 
