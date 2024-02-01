@@ -108,7 +108,7 @@ void loop() {
 }
 
 
-// Rest of your code remains unchanged...
+
 
 void sendSensorDataToESP() {
   espSerial.print("IR:      ");
@@ -126,7 +126,7 @@ void sendSensorDataToESP() {
 void sendSMS(String message) {
   mySerial.println("AT+CMGF=1");
   delay(1000);
-  mySerial.println("AT+CMGS=\"+998909787616\"");
+  mySerial.println("AT+CMGS=\"+998xxxxxxxxx\"");
   delay(1000);
   mySerial.println(message);
   delay(100);
@@ -135,7 +135,7 @@ void sendSMS(String message) {
 }
 
 void makeCall() {
-  mySerial.println("ATD+998909787616;");
+  mySerial.println("ATD+998xxxxxxxxx;");
   delay(10000);
   mySerial.println("ATH");
 }
@@ -187,7 +187,6 @@ void handleGasConcentration() {
   delay(3000);
   sendLocation();
   activateBuzzer();
-  // Turn on relays after handling gas concentration
   turnOnRelays();
 }
 
@@ -198,7 +197,6 @@ void handleIRIntensity() {
   delay(3000);
   sendLocation();
   activateBuzzer();
-  // Turn on relays after handling IR intensity
   turnOnRelays();
 }
 
@@ -209,6 +207,5 @@ void handleVibration() {
   delay(3000);
   sendLocation();
   activateBuzzer();
-  // Turn on relays after handling vibration
   turnOnRelays();
 }
