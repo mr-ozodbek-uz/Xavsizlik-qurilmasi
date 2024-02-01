@@ -1,50 +1,54 @@
-# Gaz_hafi
+
+# Gaz_hafi IoT Loyihasi
+
 Bu kod Hoshimov Ozodbek Huanivch tomonidan yaratilgan va patentlangan manba
 
-Bu kodalarda  Arduino va ESP8266 modullarini birlashtirgan bir IoT loyihasi mavjud. Bu loyiha uyg'unlik sensorlardan malumot olish, ularni ESP8266 moduli orqali bir serverga yuborish, serverdan esa web brauzer orqali bu malumotlarni ko'rish imkoniyatini beradi.
+Bu kodalarda Arduino va ESP8266 modullarini birlashtirgan bir IoT loyihasi mavjud. Ushbu loyiha uyg'unlik sensorlardan malumot olish, ularni ESP8266 moduli orqali bir serverga yuborish, serverdan esa web brauzer orqali bu malumotlarni ko'rish imkoniyatini beradi.
 
-Bu loyihaning asosiy qismlarini izohlayman.
-
-### Arduino tomoni
+## Arduino kodi:
 
 Arduino kodi, har bir sensorning malumotini o'qib oladi va uni ESP8266 moduliga yuboradi. Sensorlar orqali olingan malumotlar serverga yuboriladi va shunday qilib, uyingizdagi holat haqida ma'lumotni saqlaygan serverga aloqa o'rnatiladi.
 
-- **Sensorlar va ulardan olingan ma'lumotlar:**
-  - DHT22 sensor orqali havo harorati va namlik.
-  - Analog sensor orqali gaz konsentratsiyasi.
-  - IR sensor orqali infrachiziqlar intensivligi.
-  - Vibration sensor orqali vibratsiya intensivligi.
+### Sensorlar va ulardan olingan ma'lumotlar:
 
-- **Funksiyalar:**
-  - `sendSensorDataToESP()`: ESP8266 moduliga sensor ma'lumotlarini yuborish.
-  - `sendSMS()`: SMS yuborish.
-  - `makeCall()`: Qo'ng'iroq qilish.
-  - `sendLocation()`: Lokatsiyani yuborish.
-  - `activateBuzzer()`: Buzzer ni yoqish.
-  - `turnOnRelays()` va `turnOffRelays()`: Relaysni yoqish va o'chirish.
-  - `handleGasConcentration()`, `handleIRIntensity()`, `handleVibration()`: Har bir holat uchun ma'lumot yuborish va qo'ng'iroq qilish.
+- DHT22 sensor orqali havo harorati va namlik.
+- Analog sensor orqali gaz konsentratsiyasi.
+- IR sensor orqali infrachiziqlar intensivligi.
+- Vibration sensor orqali vibratsiya intensivligi.
 
-### ESP8266 tomoni
+### Funksiyalar:
+
+- `sendSensorDataToESP()`: ESP8266 moduliga sensor ma'lumotlarini yuborish.
+- `sendSMS()`: SMS yuborish.
+- `makeCall()`: Qo'ng'iroq qilish.
+- `sendLocation()`: Lokatsiyani yuborish.
+- `activateBuzzer()`: Buzzer ni yoqish.
+- `turnOnRelays()` va `turnOffRelays()`: Relaysni yoqish va o'chirish.
+- `handleGasConcentration()`, `handleIRIntensity()`, `handleVibration()`: Har bir holat uchun ma'lumot yuborish va qo'ng'iroq qilish.
+
+### ESP8266 kodi:
 
 ESP8266 kodi, Arduino modulidan olingan ma'lumotlarni qabul qilib, ularni web server orqali brauzerga ko'rsatadi.
 
-- **Web server:**
-  - ESP8266WebServer bilan server yaratilgan.
-  - `/` va `/update` manzillariga kelgan so'rovlarni qayta ishlaydigan funksiyalar mavjud.
+### Web server va malumotlarni olish:
 
-- **Malumotlarni olish:**
-  - Arduino modulidan kelgan ma'lumotlar `/update` manziliga o'tkaziladi.
-  - `parseData()` funksiyasi orqali ma'lumotlar ajratiladi.
+- ESP8266WebServer bilan server yaratilgan.
+- `/` va `/update` manzillariga kelgan so'rovlarni qayta ishlaydigan funksiyalar mavjud.
+- Arduino modulidan kelgan ma'lumotlar `/update` manziliga o'tkaziladi.
+- `parseData()` funksiyasi orqali ma'lumotlar ajratiladi.
 
-- **Web sayt:**
-  - `handleRoot()` funksiyasi orqali server brauzerga HTML sahifasini yuboradi.
-  - Brauzerda `/` manziliga so'rov kelganida, ESP8266 serveri olingan ma'lumotlarni HTML sahifasida ko'rsatadi.
+### Web sayt:
 
-### Ma'lumotlar almashinuvi:**
-  - Arduino modulidan olingan ma'lumotlar ESP8266 moduliga Serial bilan yuboriladi.
-  - ESP8266 moduli esa Serial bilan o'qib oladi va ma'lumotlarni qabul qilar.
+- `handleRoot()` funksiyasi orqali server brauzerga HTML sahifasini yuboradi.
+- Brauzerda `/` manziliga so'rov kelganida, ESP8266 serveri olingan ma'lumotlarni HTML sahifasida ko'rsatadi.
+
+### Ma'lumotlar almashinuvi:
+
+- Arduino modulidan olingan ma'lumotlar ESP8266 moduliga Serial bilan yuboriladi.
+- ESP8266 moduli esa Serial bilan o'qib oladi va ma'lumotlarni qabul qilar.
 
 ### Sozlamalar:
+
 - WiFi sozlamalari (`ssid` va `password`) serverni yaratishda ishlatilgan.
 
-Bu kodlarni ishga tushirish uchun, Arduino va ESP8266 modullarini moslashtirilgan holda birlashtiring va serverga ulangan WiFi tarmog'i orqali bog'langan holda web brauzerda ko'rish uchun hazir bo'lishini kuting.
+Bu kodlarni ishga tushirish uchun, Arduino va ESP8266 modullarini moslashtirilgan holda birlashtiring va serverga ulangan WiFi tarmog'i orqali bog'langan holda web brauzerda ko'rish uchun tayyor.
