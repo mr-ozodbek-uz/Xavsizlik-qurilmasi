@@ -1,35 +1,33 @@
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
-#include <SoftwareSerial.h>
-#include <DHT.h>
+// Kutubxonalar
+#include <Wire.h>  // I2C kommunikatsiyasi uchun kutubxona
+#include <LiquidCrystal_I2C.h>  // I2C orqali LCD ekranini boshqarish uchun kutubxona
+#include <SoftwareSerial.h>  // SoftwareSerial kutubxonasi, bu kutubxona orqali bir nechta serial portlarni ishlatish mumkin
+#include "DHT.h"  // DHT11/DHT22 sensorlarini boshqarish uchun kutubxona
 
-float temp; // Harorat
-float humidity; // Namlik
-float gasConcentration; // Gastrafik konsentratsiyasi
-float irIntensity; // Infrakras intensivligi
-int vibrationValue; // Vibratsiya qiymati
-
-#define analogSensor A0
-#define minValue 0
-#define maxValue 1023
-#define threshold 50
-#define DHTPIN 2
-#define DHTTYPE DHT22
-#define IRSensor A1
-#define vibrationSensorPin A3
-#define buzzer 13
+// O'zgaruvchilar va konstantalar
+#define DHT11_PIN 2  // DHT11 sensorini ulash uchun Arduino pin
+#define EMERGENCY_PHONE_NUMBER "+998977477616"  // Havfsizlik xabarini yuborish uchun telefon raqami
+#define analogSensor A0  // Analog sensor uchun pin
+#define minValue 0  // Analog sensorning minimal qiymati
+#define maxValue 1023  // Analog sensorning maksimal qiymati
+#define threshold 50  // To'xtatish chegarasi
+#define IRSensor A1  // IR sensor uchun pin
+#define vibrationSensorPin A3  // Vibratsiya sensori uchun pin
+#define buzzer 13  // Buzzer uchun pin
 #define relay1 3  // Relay 1 boshqaruv pin
 #define relay2 4  // Relay 2 boshqaruv pin
 #define relay3 8  // Relay 3 boshqaruv pin
 #define relay4 7  // Relay 4 boshqaruv pin
 
-// Konstantalar
-#define EMERGENCY_PHONE_NUMBER "+998977477616"
+// Obyektlar
+DHT dht11(DHT11_PIN, DHT11);  // DHT11 obyektini e'lon qilish
+LiquidCrystal_I2C lcd(0x27, 16, 2);  // LCD obyekti
+SoftwareSerial mySerial(10, 11);  // GSM moduli uchun SoftwareSerial obyekti
+SoftwareSerial espSerial(5, 6);  // ESP moduli uchun SoftwareSerial obyekti
 
-LiquidCrystal_I2C lcd(0x27, 16, 2); // LCD obyekti
-SoftwareSerial mySerial(10, 11); // GSM moduli uchun SoftwareSerial obyekti
-SoftwareSerial espSerial(5, 6); // ESP moduli uchun SoftwareSerial obyekti
-DHT dht(DHTPIN, DHTTYPE); // DHT sensori obyekti
+// O'zgaruvchilar
+float temp, humidity, gasConcentration, irIntensity;  // Harorat, namlik, gastrafik konsentratsiyasi, infrakras intensivligi
+int vibrationValue;  // Vibratsiya qiymati
 
 void setup() {
   pinMode(analogSensor, INPUT);
@@ -41,104 +39,90 @@ void setup() {
   pinMode(relay3, OUTPUT);
   pinMode(relay4, OUTPUT);
 
-  Serial.begin(115200);
-  lcd.init();
-  lcd.backlight();
-  mySerial.begin(115200);
-  espSerial.begin(115200);
-  mySerial.println("AT+GPS=1");
+  Serial.begin(115200);  // Serial kommunikatsiyani boshlash
+  lcd.init();  // LCD ekranini ishga tushirish
+  lcd.backlight();  // LCD ekranini yoritish
+  mySerial.begin(115200);  // mySerial kommunikatsiyani boshlash
+  espSerial.begin(115200);  // espSerial kommunikatsiyani boshlash
+  mySerial.println("AT+GPS=1");  // GPS ni yoqish
   delay(1000);
-  dht.begin();
+
+  dht11.begin();  // DHT11 sensorini boshlash
 }
 
 void loop() {
+  turnOffRelays();  // Barcha relaylarni o'chirish
 
-
-   digitalWrite(relay1, LOW);
-  digitalWrite(relay2, LOW);
-  digitalWrite(relay3, LOW);
-  digitalWrite(relay4, LOW);
-
+  float humi = dht11.readHumidity();  // Namlikni o'qish
+  float tempC = dht11.readTemperature();  // Haroratni o'qish (Selsiy)
   delay(2000);
 
-  temp = dht.readTemperature();
-  lcd.setCursor(0, 0);
-  lcd.print("Temp: ");
-  lcd.print(temp);
+  lcd.setCursor(0, 0);  // LCD ekranida kursorning joylashuvini belgilash
+  lcd.print("Temp: ");  // Haroratni chiqarish
+  lcd.print(tempC);
   lcd.print(" *C");
 
-
-  int sensorValue = analogRead(analogSensor);
-  gasConcentration = map(sensorValue, minValue, maxValue, 0, 100);
-  lcd.setCursor(16, 1);
-  lcd.print("Gaz.: ");
+  int sensorValue = analogRead(analogSensor);  // Analog sensor qiymatini o'qish
+  gasConcentration = map(sensorValue, minValue, maxValue, 0, 100);  // Gastrafik konsentratsiyani hisoblash
+  lcd.setCursor(16, 1);  // LCD ekranida kursorning joylashuvini belgilash
+  lcd.print("Gaz.: ");  // Gastrafik konsentratsiyani chiqarish
   lcd.print(gasConcentration);
   lcd.print("%");
 
-  vibrationValue = analogRead(vibrationSensorPin);
-  lcd.setCursor(-4, 2);
-  lcd.print("Vibratsiya: ");
+  vibrationValue = analogRead(vibrationSensorPin);  // Vibratsiya sensori qiymatini o'qish
+  lcd.setCursor(-4, 2);  // LCD ekranida kursorning joylashuvini belgilash
+  lcd.print("Vibratsiya: ");  // Vibratsiyani chiqarish
   lcd.print(vibrationValue);
 
-  int irValue = analogRead(IRSensor);
-  irIntensity = map(irValue, minValue, maxValue, 100, 0);
-  lcd.setCursor(0, 3);
-  lcd.print("IR: ");
+  int irValue = analogRead(IRSensor);  // IR sensor qiymatini o'qish
+  irIntensity = map(irValue, minValue, maxValue, 100, 0);  // Infrakras intensivligini hisoblash
+  lcd.setCursor(0, 3);  // LCD ekranida kursorning joylashuvini belgilash
+  lcd.print("IR: ");  // Infrakras intensivligini chiqarish
   lcd.print(irIntensity);
   lcd.print("%");
 
-  Serial.print("Harorat: ");
-  Serial.print(temp);
+  Serial.print("Harorat: ");  // Haroratni chiqarish
+  Serial.print(tempC);
   Serial.println(" *C");
-  Serial.print("Namlik: ");
-  Serial.print(humidity);
+  Serial.print("Namlik: ");  // Namlikni chiqarish
+  Serial.print(humi);
   Serial.println("%");
-  Serial.print("Gaz Kons.: ");
+  Serial.print("Gaz Kons.: ");  // Gastrafik konsentratsiyani chiqarish
   Serial.print(gasConcentration);
   Serial.println("%");
-  Serial.print("IR Intens.: ");
+  Serial.print("IR Intens.: ");  // Infrakras intensivligini chiqarish
   Serial.println(irIntensity);
-  Serial.print("Vibratsiya: ");
+  Serial.print("Vibratsiya: ");  // Vibratsiyani chiqarish
   Serial.println((vibrationValue > threshold) ? "Aniq" : "Aniq emas");
 
-
-
-
-  sendSensorDataToESP();
+  sendSensorDataToESP();  // Sensor ma'lumotlarini ESP ga yuborish
 
   delay(100);
 
-  if (espSerial.available() > 0) {
-    String espCommand = espSerial.readStringUntil('\n');
-    Serial.println("Command from ESP: " + espCommand);
+  if (espSerial.available() > 0) {  // Agar ESP dan ma'lumot kelgan bo'lsa
+    String espCommand = espSerial.readStringUntil('\n');  // ESP dan kelgan buyruqni o'qish
+    Serial.println("Command from ESP: " + espCommand);  // ESP dan kelgan buyruqni chiqarish
 
-    if (espCommand.startsWith("TURN_ON_RELAY1")) {
-      digitalWrite(relay1, LOW);
-    } else if (espCommand.startsWith("TURN_OFF_RELAY1")) {
-      digitalWrite(relay1, HIGH);
+    if (espCommand.startsWith("TURN_ON_RELAY1")) {  // Agar buyruq "TURN_ON_RELAY1" bo'lsa
+      digitalWrite(relay1, LOW);  // Relay 1 ni yoqish
+    } else if (espCommand.startsWith("TURN_OFF_RELAY1")) {  // Agar buyruq "TURN_OFF_RELAY1" bo'lsa
+      digitalWrite(relay1, HIGH);  // Relay 1 ni o'chirish
     }
-    // Add more commands as needed
-
-    espSerial.flush();
+    espSerial.flush();  // ESP serial bufferini tozalash
   }
- // favqulota jaroyon
 
-if (gasConcentration > threshold) {
-  turnOffRelays();
-  handleGasConcentration();
-} else if (irIntensity > threshold) {
-  turnOffRelays();
-  handleIRIntensity();
-} else if (vibrationValue > threshold) {
-  turnOffRelays();
-  handleVibration();
-} else {
-  turnOffRelays();
+  if (gasConcentration > threshold) {  // Agar gastrafik konsentratsiya chegaradan oshsa
+    handleGasConcentration();  // Gastrafik konsentratsiyani boshqarish
+  } else if (irIntensity > threshold) {  // Agar infrakras intensivligi chegaradan oshsa
+    handleIRIntensity();  // Infrakras intensivligini boshqarish
+  } else if (vibrationValue > threshold) {  // Agar vibratsiya chegaradan oshsa
+    handleVibration();  // Vibratsiyani boshqarish
+  } else {
+    turnOffRelays();  // Barcha relaylarni o'chirish
+  }
 }
 
-}
-
-void sendSensorDataToESP() {
+void sendSensorDataToESP() {  // Sensor ma'lumotlarini ESP ga yuborish
   espSerial.print("IR:      ");
   espSerial.println(irIntensity);
   espSerial.print("MQ9:     ");
@@ -151,38 +135,27 @@ void sendSensorDataToESP() {
   espSerial.println((vibrationValue == HIGH) ? "Aniq" : "Aniq emas");
 }
 
-void turnOffRelays() {
+void turnOffRelays() {  // Barcha relaylarni o'chirish
   digitalWrite(relay1, HIGH);
   digitalWrite(relay2, HIGH);
   digitalWrite(relay3, HIGH);
   digitalWrite(relay4, HIGH);
 }
 
-void sendSMS(String message) {
-  String smsCommand = "AT+CMGF=1";
+void sendSMS(String message) {  // SMS yuborish
+  mySerial.println("AT+CMGF=1");
   delay(1000);
-  mySerial.println(smsCommand);
-  String phoneNumberCommand = "AT+CMGS=\"";
-  phoneNumberCommand.concat(EMERGENCY_PHONE_NUMBER);
-  phoneNumberCommand.concat("\"");
-  mySerial.println(phoneNumberCommand);
-  delay(1000);
-  mySerial.println(message);
-  delay(100);
   mySerial.println((char)26);
   delay(1000);
 }
 
-void makeCall() {
-  String callCommand = "ATD";
-  callCommand.concat(EMERGENCY_PHONE_NUMBER);
-  callCommand.concat(";");
-  mySerial.println(callCommand);
+void makeCall() {  // Qo'ng'iroq qilish
+  mySerial.println("ATD" + String(EMERGENCY_PHONE_NUMBER) + ";");
   delay(10000);
   mySerial.println("ATH");
 }
 
-void sendLocation() {
+void sendLocation() {  // Lokatsiyani yuborish
   mySerial.println("AT+LOCATION=2");
   delay(1000);
   while (mySerial.available()) {
@@ -196,7 +169,7 @@ void sendLocation() {
   }
 }
 
-void activateBuzzer() {
+void activateBuzzer() {  // Buzzer ishga tushirish
   for (int i = 400; i <= 1500; i++) {
     tone(buzzer, i);
     delay(5);
@@ -207,92 +180,83 @@ void activateBuzzer() {
   }
 }
 
-void handleGasConcentration() {
-   lcd.clear();
-   lcdhelp();
+void handleGasConcentration() {  // Gastrafik konsentratsiyani boshqarish
+  lcd.clear();
+  lcdhelp();
+  activateBuzzer();
   sendSMS("Gaz konsentratsiyasi belgilangan chegaradan oshiq!");
   delay(3000);
   makeCall();
   delay(3000);
   sendLocation();
-  activateBuzzer();
   turnOffRelays();
 
   if (gasConcentration > threshold) {
-  turnOffRelays();
-  handleGasConcentration();
-} else if (irIntensity > threshold) {
-  turnOffRelays();
-  handleIRIntensity();
-} else if (vibrationValue > threshold) {
-  turnOffRelays();
-  handleVibration();
-} else {
-  turnOffRelays();
-}
-    lcd.clear();
+    handleGasConcentration();
+  } else if (irIntensity > threshold) {
+    handleIRIntensity();
+  } else if (vibrationValue > threshold) {
+    handleVibration();
+  } else {
+    turnOffRelays();
+  }
+  lcd.clear();
 }
 
-void handleIRIntensity() {
-   lcd.clear();
-   lcdhelp();
+void handleIRIntensity() {  // Infrakras intensivligini boshqarish
+  lcd.clear();
+  lcdhelp();
+  activateBuzzer();
   sendSMS("IR sensori yonmanganda o'tqan!");
   delay(3000);
   makeCall();
   delay(3000);
   sendLocation();
-  activateBuzzer();
   turnOffRelays();
 
   if (gasConcentration > threshold) {
-  turnOffRelays();
-  handleGasConcentration();
-} else if (irIntensity > threshold) {
-  turnOffRelays();
-  handleIRIntensity();
-} else if (vibrationValue > threshold) {
-  turnOffRelays();
-  handleVibration();
-} else {
-  turnOffRelays();
-}
-    lcd.clear();
+    handleGasConcentration();
+  } else if (irIntensity > threshold) {
+    handleIRIntensity();
+  } else if (vibrationValue > threshold) {
+    handleVibration();
+  } else {
+    turnOffRelays();
+  }
+  lcd.clear();
 }
 
-void handleVibration() {
-   lcd.clear();
-   lcdhelp();
+void handleVibration() {  // Vibratsiyani boshqarish
+  lcd.clear();
+  lcdhelp();
+  activateBuzzer();
   sendSMS("Vibratsiya aniqlandi!");
   delay(3000);
   makeCall();
   delay(3000);
   sendLocation();
-  activateBuzzer();
   turnOffRelays();
 
   if (gasConcentration > threshold) {
-  turnOffRelays();
-  handleGasConcentration();
-} else if (irIntensity > threshold) {
-  turnOffRelays();
-  handleIRIntensity();
-} else if (vibrationValue > threshold) {
-  turnOffRelays();
-  handleVibration();
-} else {
-  turnOffRelays();
+    handleGasConcentration();
+  } else if (irIntensity > threshold) {
+    handleIRIntensity();
+  } else if (vibrationValue > threshold) {
+    handleVibration();
+  } else {
+    turnOffRelays();
+  }
+
+  lcd.clear();
 }
 
-    lcd.clear();
-}
-
-void  lcdhelp() {
-lcd.setCursor(0, 0);
+void lcdhelp() {  // LCD ekraniga yordam matnini chiqarish
+  lcd.setCursor(0, 0);
   lcd.print("Siz Xaf ostidasiz");
   lcd.setCursor(-4, 1);
   lcd.print("Uyni tark eting");
   lcd.setCursor(-4, 2);
   lcd.print("Haf Haf Haf");
-    lcd.setCursor(16, 3);
+  lcd.setCursor(16, 3);
   lcd.print("Habar berildi");
 }
