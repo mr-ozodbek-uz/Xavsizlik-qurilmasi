@@ -8,35 +8,38 @@
 // O'zgaruvchilar va konstantalar
 #define EMERGENCY_PHONE_NUMBER "+998977477616"  // Havfsizlik xabarini yuborish uchun telefon raqami
 #define minValue 0  // Analog sensorning minimal qiymati
+#include <DHT.h>
+#include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
+
 #define maxValue 1023  // Analog sensorning maksimal qiymati
 #define threshold 50  // To'xtatish chegarasi
 
-
-//analog pinlar
+// Analog pinlar
 #define analogSensor A0  // Analog sensor uchun pin
 #define IRSensor A1  // IR sensor uchun pin
-#define vibrationSensorPin A2// Vibratsiya sensori uchun pin
-//bosh analog pinlar
-#define bosh_A3 A3 // bosh A3 pin
-#define bosh_A4 A4 // bosh A4 pin
-#define bosh_A5 A5 // bosh A5 pin
-#define bosh_A6 A6 // bosh A6 pin
-#define bosh_A7 A7 // bosh A7 pin
+#define vibrationSensorPin A2  // Vibratsiya sensori uchun pin
 
+// Bosh analog pinlar
+#define bosh_A3 A3  // bosh A3 pin
+#define bosh_A4 A4  // bosh A4 pin
+#define bosh_A5 A5  // bosh A5 pin
+#define bosh_A6 A6  // bosh A6 pin
+#define bosh_A7 A7  // bosh A7 pin
 
-
-// digital pinlar
+// Digital pinlar
 #define DHT11_PIN 2  // DHT11 sensorini ulash uchun Arduino pin
 #define relay1 3  // Relay 1 boshqaruv pin
 #define relay2 4  // Relay 2 boshqaruv pin
 #define relay3 5  // Relay 3 boshqaruv pin
 #define relay4 6  // Relay 4 boshqaruv pin
 #define rx_esp 11  // esp rx pin
-#define tx_esp 10 // esp tx pin
-#define rx_A9G 8 // A9G rx pin
-#define tx_A9G 7 //A9G tx pin
-#define buzzer 11 // Buzzer uchun pin
-// bosh digital pinlar
+#define tx_esp 10  // esp tx pin
+#define rx_A9G 8  // A9G rx pin
+#define tx_A9G 7  // A9G tx pin
+#define buzzer 11  // Buzzer uchun pin
+
+// Bosh digital pinlar
 #define pin12 12  // bosh pin 12
 #define pin13 13  // bosh pin 13
 
@@ -166,6 +169,7 @@ void turnOffRelays() {  // Barcha relaylarni o'chirish
   digitalWrite(relay3, HIGH);
   digitalWrite(relay4, HIGH);
 }
+
 void sendSMS(String message) {
   mySerial.println("AT+CMGF=1"); // Matn rejimiga o'tish
   delay(1000);
@@ -179,7 +183,6 @@ void sendSMS(String message) {
   delay(1000);
   mySerial.write(26); // CTRL+Z bilan xabar yuborishni yakunlash
 }
-
 
 void makeCall() {  // Qo'ng'iroq qilish
   mySerial.println("ATD" + String(EMERGENCY_PHONE_NUMBER) + ";");
