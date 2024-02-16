@@ -1,3 +1,4 @@
+
 // Kutubxonalar
 #include <Wire.h>  // I2C kommunikatsiyasi uchun kutubxona
 #include <LiquidCrystal_I2C.h>  // I2C orqali LCD ekranini boshqarish uchun kutubxona
@@ -5,25 +6,45 @@
 #include "DHT.h"  // DHT11/DHT22 sensorlarini boshqarish uchun kutubxona
 
 // O'zgaruvchilar va konstantalar
-#define DHT11_PIN 2  // DHT11 sensorini ulash uchun Arduino pin
 #define EMERGENCY_PHONE_NUMBER "+998977477616"  // Havfsizlik xabarini yuborish uchun telefon raqami
-#define analogSensor A0  // Analog sensor uchun pin
 #define minValue 0  // Analog sensorning minimal qiymati
 #define maxValue 1023  // Analog sensorning maksimal qiymati
 #define threshold 50  // To'xtatish chegarasi
+
+
+//analog pinlar
+#define analogSensor A0  // Analog sensor uchun pin
 #define IRSensor A1  // IR sensor uchun pin
-#define vibrationSensorPin A3  // Vibratsiya sensori uchun pin
-#define buzzer 13  // Buzzer uchun pin
+#define vibrationSensorPin A2// Vibratsiya sensori uchun pin
+//bosh analog pinlar
+#define bosh_A3 A3 // bosh A3 pin
+#define bosh_A4 A4 // bosh A4 pin
+#define bosh_A5 A5 // bosh A5 pin
+#define bosh_A6 A6 // bosh A6 pin
+#define bosh_A7 A7 // bosh A7 pin
+
+
+
+// digital pinlar
+#define DHT11_PIN 2  // DHT11 sensorini ulash uchun Arduino pin
 #define relay1 3  // Relay 1 boshqaruv pin
 #define relay2 4  // Relay 2 boshqaruv pin
-#define relay3 8  // Relay 3 boshqaruv pin
-#define relay4 7  // Relay 4 boshqaruv pin
+#define relay3 5  // Relay 3 boshqaruv pin
+#define relay4 6  // Relay 4 boshqaruv pin
+#define rx_esp 11  // esp rx pin
+#define tx_esp 10 // esp tx pin
+#define rx_A9G 8 // A9G rx pin
+#define tx_A9G 7 //A9G tx pin
+#define buzzer 11 // Buzzer uchun pin
+// bosh digital pinlar
+#define pin12 12  // bosh pin 12
+#define pin13 13  // bosh pin 13
 
 // Obyektlar
 DHT dht11(DHT11_PIN, DHT11);  // DHT11 obyektini e'lon qilish
 LiquidCrystal_I2C lcd(0x27, 16, 2);  // LCD obyekti
-SoftwareSerial mySerial(10, 11);  // GSM moduli uchun SoftwareSerial obyekti
-SoftwareSerial espSerial(5, 6);  // ESP moduli uchun SoftwareSerial obyekti
+SoftwareSerial mySerial(8, 9);  // GSM moduli uchun SoftwareSerial obyekti
+SoftwareSerial espSerial(rx_esp, tx_esp);  // ESP moduli uchun SoftwareSerial obyekti
 
 // O'zgaruvchilar
 float temp, humidity, gasConcentration, irIntensity;  // Harorat, namlik, gastrafik konsentratsiyasi, infrakras intensivligi
@@ -123,15 +144,19 @@ void loop() {
 }
 
 void sendSensorDataToESP() {  // Sensor ma'lumotlarini ESP ga yuborish
-  espSerial.print("IR:      ");
+  espSerial.print("IR:");
   espSerial.println(irIntensity);
-  espSerial.print("MQ9:     ");
+  espSerial.print("<br>");
+  espSerial.print("MQ9:");
   espSerial.println(gasConcentration);
-  espSerial.print("Harorat: ");
+  espSerial.print("<br>");
+  espSerial.print("Harorat:");
   espSerial.println(temp);
-  espSerial.print("Namlik: ");
+  espSerial.print("<br>");
+  espSerial.print("Namlik");
   espSerial.println(humidity);
-  espSerial.print("Vibratsiya: ");
+  espSerial.print("<br>");
+  espSerial.print("Vibratsiya:");
   espSerial.println((vibrationValue == HIGH) ? "Aniq" : "Aniq emas");
 }
 
@@ -141,13 +166,20 @@ void turnOffRelays() {  // Barcha relaylarni o'chirish
   digitalWrite(relay3, HIGH);
   digitalWrite(relay4, HIGH);
 }
+void sendSMS(String message) {
+  mySerial.println("AT+CMGF=1"); // Matn rejimiga o'tish
+  delay(1000);
 
-void sendSMS(String message) {  // SMS yuborish
-  mySerial.println("AT+CMGF=1");
+  // Raqamni va buyruqni birlashtirish uchun char massividan foydalanamiz
+  char cmd[50]; // Bu yerda 50 belgini tanlash, ko'pchilik holatlarda yetarli bo'ladi
+  sprintf(cmd, "AT+CMGS=\"%s\"", EMERGENCY_PHONE_NUMBER);
+  mySerial.println(cmd);
   delay(1000);
-  mySerial.println((char)26);
+  mySerial.print(message); // Xabar matnini yuborish
   delay(1000);
+  mySerial.write(26); // CTRL+Z bilan xabar yuborishni yakunlash
 }
+
 
 void makeCall() {  // Qo'ng'iroq qilish
   mySerial.println("ATD" + String(EMERGENCY_PHONE_NUMBER) + ";");
@@ -155,17 +187,30 @@ void makeCall() {  // Qo'ng'iroq qilish
   mySerial.println("ATH");
 }
 
-void sendLocation() {  // Lokatsiyani yuborish
+void sendLocationAsSMS() {
   mySerial.println("AT+LOCATION=2");
   delay(1000);
+
+  String locationData = "";
   while (mySerial.available()) {
-    String location = mySerial.readStringUntil('\n');
-    if (location.indexOf("+LOCATION: ") >= 0) {
-      location = location.substring(location.indexOf("+LOCATION: ") + 11);
-      String longitude = location.substring(0, location.indexOf(","));
-      String latitude = location.substring(location.indexOf(",") + 1);
-      sendSMS("Lokatsiya: " + latitude + ", " + longitude);
-    }
+    char c = mySerial.read();
+    locationData += c;
+  }
+
+  if (locationData.indexOf("+LOCATION: ") >= 0) {
+    String location = locationData.substring(locationData.indexOf("+LOCATION: ") + 11);
+    String longitude = location.substring(0, location.indexOf(","));
+    String latitude = location.substring(location.indexOf(",") + 1, location.indexOf("\r"));
+
+    String message = "Lokatsiya: " + latitude + ", " + longitude;
+    Serial.println(message); // Serial port orqali lokatsiya chiqariladi
+
+    // SMS yuborish
+    mySerial.println("AT+CMGS=\"+998901234567\""); // Belgilangan telefon raqamini kiriting
+    delay(1000);
+    mySerial.println(message); // SMS matni sifatida lokatsiya yuboriladi
+    delay(1000);
+    mySerial.write(26); // SMS yuborishni yakunlash uchun Ctrl+Z belgisini yuborish
   }
 }
 
@@ -188,7 +233,7 @@ void handleGasConcentration() {  // Gastrafik konsentratsiyani boshqarish
   delay(3000);
   makeCall();
   delay(3000);
-  sendLocation();
+  sendLocationAsSMS();
   turnOffRelays();
 
   if (gasConcentration > threshold) {
@@ -211,7 +256,7 @@ void handleIRIntensity() {  // Infrakras intensivligini boshqarish
   delay(3000);
   makeCall();
   delay(3000);
-  sendLocation();
+  sendLocationAsSMS();
   turnOffRelays();
 
   if (gasConcentration > threshold) {
@@ -234,7 +279,7 @@ void handleVibration() {  // Vibratsiyani boshqarish
   delay(3000);
   makeCall();
   delay(3000);
-  sendLocation();
+  sendLocationAsSMS();
   turnOffRelays();
 
   if (gasConcentration > threshold) {
