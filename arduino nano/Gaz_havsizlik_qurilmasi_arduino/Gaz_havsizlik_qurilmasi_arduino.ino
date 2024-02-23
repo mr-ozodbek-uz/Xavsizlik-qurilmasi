@@ -4,12 +4,15 @@
 #include <LiquidCrystal_I2C.h>  // I2C orqali LCD ekranini boshqarish uchun kutubxona
 #include <SoftwareSerial.h>  // SoftwareSerial kutubxonasi, bu kutubxona orqali bir nechta serial portlarni ishlatish mumkin
 #include "DHT.h"  // DHT11/DHT22 sensorlarini boshqarish uchun kutubxona
-
+#include "RTClib.h"
 // O'zgaruvchilar va konstantalar
 #define EMERGENCY_PHONE_NUMBER "+998977477616"  // Havfsizlik xabarini yuborish uchun telefon raqami
 #define minValue 0  // Analog sensorning minimal qiymati
 #define maxValue 1023  // Analog sensorning maksimal qiymati
 #define threshold 50  // To'xtatish chegarasi
+
+
+RTC_DS1307 rtc;
 
 
 //analog pinlar
@@ -25,19 +28,19 @@
 
 
 
-// digital pinlar 
+// digital pinlar
 #define DHT11_PIN 2  // DHT11 sensorini ulash uchun Arduino pin
 #define relay1 3  // Relay 1 boshqaruv pin
 #define relay2 4  // Relay 2 boshqaruv pin
 #define relay3 5  // Relay 3 boshqaruv pin
 #define relay4 6  // Relay 4 boshqaruv pin
 #define rx_esp 11  // esp rx pin
-#define tx_esp 10 // esp tx pin 
+#define tx_esp 10 // esp tx pin
 #define rx_A9G 8 // A9G rx pin
 #define tx_A9G 7 //A9G tx pin
 #define buzzer 11 // Buzzer uchun pin
-// bosh digital pinlar 
-#define pin12 12  // bosh pin 12 
+// bosh digital pinlar
+#define pin12 12  // bosh pin 12
 #define pin13 13  // bosh pin 13
 
 // Obyektlar
@@ -69,10 +72,41 @@ void setup() {
   delay(1000);
 
   dht11.begin();  // DHT11 sensorini boshlash
+
+
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+
+  if (! rtc.isrunning()) {
+    Serial.println("RTC is NOT running!");
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+  }
 }
 
 void loop() {
   turnOffRelays();  // Barcha relaylarni o'chirish
+
+
+  DateTime now = rtc.now();
+
+  Serial.print(now.year(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print(' ');
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
+  Serial.println();
+
+
+  delay(1000);
 
   float humi = dht11.readHumidity();  // Namlikni o'qish
   float tempC = dht11.readTemperature();  // Haroratni o'qish (Selsiy)
@@ -169,7 +203,7 @@ void turnOffRelays() {  // Barcha relaylarni o'chirish
 void sendSMS(String message) {
   mySerial.println("AT+CMGF=1"); // Matn rejimiga o'tish
   delay(1000);
-  
+
   // Raqamni va buyruqni birlashtirish uchun char massividan foydalanamiz
   char cmd[50]; // Bu yerda 50 belgini tanlash, ko'pchilik holatlarda yetarli bo'ladi
   sprintf(cmd, "AT+CMGS=\"%s\"", EMERGENCY_PHONE_NUMBER);
@@ -190,7 +224,7 @@ void makeCall() {  // Qo'ng'iroq qilish
 void sendLocationAsSMS() {
   mySerial.println("AT+LOCATION=2");
   delay(1000);
-  
+
   String locationData = "";
   while (mySerial.available()) {
     char c = mySerial.read();
@@ -201,10 +235,10 @@ void sendLocationAsSMS() {
     String location = locationData.substring(locationData.indexOf("+LOCATION: ") + 11);
     String longitude = location.substring(0, location.indexOf(","));
     String latitude = location.substring(location.indexOf(",") + 1, location.indexOf("\r"));
-    
+
     String message = "Lokatsiya: " + latitude + ", " + longitude;
     Serial.println(message); // Serial port orqali lokatsiya chiqariladi
-    
+
     // SMS yuborish
     mySerial.println("AT+CMGS=\"+998901234567\""); // Belgilangan telefon raqamini kiriting
     delay(1000);
