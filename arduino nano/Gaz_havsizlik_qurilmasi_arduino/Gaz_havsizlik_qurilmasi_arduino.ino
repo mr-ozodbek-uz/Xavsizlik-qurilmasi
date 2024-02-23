@@ -8,9 +8,14 @@
 // O'zgaruvchilar va konstantalar
 #define EMERGENCY_PHONE_NUMBER "+998977477616"  // Havfsizlik xabarini yuborish uchun telefon raqami
 #define minValue 0  // Analog sensorning minimal qiymati
+#include <DHT.h>
+#include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
+
 #define maxValue 1023  // Analog sensorning maksimal qiymati
 #define threshold 50  // To'xtatish chegarasi
 
+<<<<<<< HEAD:arduino nano/Gaz_havsizlik_qurilmasi_arduino/Gaz_havsizlik_qurilmasi_arduino.ino
 
 RTC_DS1307 rtc;
 
@@ -29,17 +34,41 @@ RTC_DS1307 rtc;
 
 
 // digital pinlar
+=======
+// Analog pinlar
+#define analogSensor A0  // Analog sensor uchun pin
+#define IRSensor A1  // IR sensor uchun pin
+#define vibrationSensorPin A2  // Vibratsiya sensori uchun pin
+
+// Bosh analog pinlar
+#define bosh_A3 A3  // bosh A3 pin
+#define bosh_A4 A4  // bosh A4 pin
+#define bosh_A5 A5  // bosh A5 pin
+#define bosh_A6 A6  // bosh A6 pin
+#define bosh_A7 A7  // bosh A7 pin
+
+// Digital pinlar
+>>>>>>> 852de40daca2560578c845f167df61128af302f8:arduino nano/Gaz_havsizlik_qurilmasi_arduino.ino
 #define DHT11_PIN 2  // DHT11 sensorini ulash uchun Arduino pin
 #define relay1 3  // Relay 1 boshqaruv pin
 #define relay2 4  // Relay 2 boshqaruv pin
 #define relay3 5  // Relay 3 boshqaruv pin
 #define relay4 6  // Relay 4 boshqaruv pin
 #define rx_esp 11  // esp rx pin
+<<<<<<< HEAD:arduino nano/Gaz_havsizlik_qurilmasi_arduino/Gaz_havsizlik_qurilmasi_arduino.ino
 #define tx_esp 10 // esp tx pin
 #define rx_A9G 8 // A9G rx pin
 #define tx_A9G 7 //A9G tx pin
 #define buzzer 11 // Buzzer uchun pin
 // bosh digital pinlar
+=======
+#define tx_esp 10  // esp tx pin
+#define rx_A9G 8  // A9G rx pin
+#define tx_A9G 7  // A9G tx pin
+#define buzzer 11  // Buzzer uchun pin
+
+// Bosh digital pinlar
+>>>>>>> 852de40daca2560578c845f167df61128af302f8:arduino nano/Gaz_havsizlik_qurilmasi_arduino.ino
 #define pin12 12  // bosh pin 12
 #define pin13 13  // bosh pin 13
 
@@ -204,6 +233,7 @@ void sendSMS(String message) {
   mySerial.println("AT+CMGF=1"); // Matn rejimiga o'tish
   delay(1000);
 
+<<<<<<< HEAD:arduino nano/Gaz_havsizlik_qurilmasi_arduino/Gaz_havsizlik_qurilmasi_arduino.ino
   // Raqamni va buyruqni birlashtirish uchun char massividan foydalanamiz
   char cmd[50]; // Bu yerda 50 belgini tanlash, ko'pchilik holatlarda yetarli bo'ladi
   sprintf(cmd, "AT+CMGS=\"%s\"", EMERGENCY_PHONE_NUMBER);
@@ -211,6 +241,19 @@ void sendSMS(String message) {
   delay(1000);
   mySerial.print(message); // Xabar matnini yuborish
   delay(1000);
+=======
+void sendSMS(String message) {
+  mySerial.println("AT+CMGF=1"); // Matn rejimiga o'tish
+  delay(1000);
+
+  // Raqamni va buyruqni birlashtirish uchun char massividan foydalanamiz
+  char cmd[50]; // Bu yerda 50 belgini tanlash, ko'pchilik holatlarda yetarli bo'ladi
+  sprintf(cmd, "AT+CMGS=\"%s\"", EMERGENCY_PHONE_NUMBER);
+  mySerial.println(cmd);
+  delay(1000);
+  mySerial.print(message); // Xabar matnini yuborish
+  delay(1000);
+>>>>>>> 852de40daca2560578c845f167df61128af302f8:arduino nano/Gaz_havsizlik_qurilmasi_arduino.ino
   mySerial.write(26); // CTRL+Z bilan xabar yuborishni yakunlash
 }
 
