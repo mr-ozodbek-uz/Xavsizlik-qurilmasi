@@ -71,7 +71,13 @@ void setup() {
 }
 
 void loop() {
-  turnOffRelays();  // Barcha relaylarni o'chirish
+
+  
+ digitalWrite(relay1, LOW);
+  digitalWrite(relay2, LOW);
+  digitalWrite(relay3, LOW);
+  digitalWrite(relay4, LOW);
+
 
   float humi = dht11.readHumidity();  // Namlikni o'qish
   float tempC = dht11.readTemperature();  // Haroratni o'qish (Selsiy)
@@ -133,12 +139,12 @@ void loop() {
 
   if (gasConcentration > threshold) {  // Agar gastrafik konsentratsiya chegaradan oshsa
     handleGasConcentration();  // Gastrafik konsentratsiyani boshqarish
+    turnOffRelays();  // Barcha relaylarni o'chirish
   } else if (irIntensity > threshold) {  // Agar infrakras intensivligi chegaradan oshsa
     handleIRIntensity();  // Infrakras intensivligini boshqarish
   } else if (vibrationValue > threshold) {  // Agar vibratsiya chegaradan oshsa
     handleVibration();  // Vibratsiyani boshqarish
   } else {
-    turnOffRelays();  // Barcha relaylarni o'chirish
   }
 }
 
@@ -203,22 +209,22 @@ void activateBuzzer() {  // Buzzer ishga tushirish
 void handleGasConcentration() {  // Gastrafik konsentratsiyani boshqarish
   lcd.clear();
   lcdhelp();
+  turnOffRelays();
   activateBuzzer();
   sendSMS("Gaz konsentratsiyasi belgilangan chegaradan oshiq!");
   delay(3000);
   makeCall();
   delay(3000);
   sendLocation();
-  turnOffRelays();
 
   if (gasConcentration > threshold) {
     handleGasConcentration();
+    turnOffRelays();
   } else if (irIntensity > threshold) {
     handleIRIntensity();
   } else if (vibrationValue > threshold) {
     handleVibration();
   } else {
-    turnOffRelays();
   }
   lcd.clear();
 }
@@ -226,22 +232,22 @@ void handleGasConcentration() {  // Gastrafik konsentratsiyani boshqarish
 void handleIRIntensity() {  // Infrakras intensivligini boshqarish
   lcd.clear();
   lcdhelp();
+  turnOffRelays();
   activateBuzzer();
   sendSMS("IR sensori yonmanganda o'tqan!");
   delay(3000);
   makeCall();
   delay(3000);
   sendLocation();
-  turnOffRelays();
 
   if (gasConcentration > threshold) {
     handleGasConcentration();
+    turnOffRelays();
   } else if (irIntensity > threshold) {
     handleIRIntensity();
   } else if (vibrationValue > threshold) {
     handleVibration();
   } else {
-    turnOffRelays();
   }
   lcd.clear();
 }
@@ -249,22 +255,22 @@ void handleIRIntensity() {  // Infrakras intensivligini boshqarish
 void handleVibration() {  // Vibratsiyani boshqarish
   lcd.clear();
   lcdhelp();
+  turnOffRelays();
   activateBuzzer();
   sendSMS("Vibratsiya aniqlandi!");
   delay(3000);
   makeCall();
   delay(3000);
   sendLocation();
-  turnOffRelays();
 
   if (gasConcentration > threshold) {
     handleGasConcentration();
+    turnOffRelays();
   } else if (irIntensity > threshold) {
     handleIRIntensity();
   } else if (vibrationValue > threshold) {
     handleVibration();
   } else {
-    turnOffRelays();
   }
 
   lcd.clear();
