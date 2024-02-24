@@ -1,23 +1,14 @@
-
 // Kutubxonalar
 #include <Wire.h>  // I2C kommunikatsiyasi uchun kutubxona
 #include <LiquidCrystal_I2C.h>  // I2C orqali LCD ekranini boshqarish uchun kutubxona
 #include <SoftwareSerial.h>  // SoftwareSerial kutubxonasi, bu kutubxona orqali bir nechta serial portlarni ishlatish mumkin
 #include "DHT.h"  // DHT11/DHT22 sensorlarini boshqarish uchun kutubxona
-#include "RTClib.h"
+
 // O'zgaruvchilar va konstantalar
 #define EMERGENCY_PHONE_NUMBER "+998977477616"  // Havfsizlik xabarini yuborish uchun telefon raqami
 #define minValue 0  // Analog sensorning minimal qiymati
-#include <DHT.h>
-#include <LiquidCrystal_I2C.h>
-#include <SoftwareSerial.h>
-
 #define maxValue 1023  // Analog sensorning maksimal qiymati
 #define threshold 50  // To'xtatish chegarasi
-
-<<<<<<< HEAD:arduino nano/Gaz_havsizlik_qurilmasi_arduino/Gaz_havsizlik_qurilmasi_arduino.ino
-
-RTC_DS1307 rtc;
 
 
 //analog pinlar
@@ -34,48 +25,24 @@ RTC_DS1307 rtc;
 
 
 // digital pinlar
-=======
-// Analog pinlar
-#define analogSensor A0  // Analog sensor uchun pin
-#define IRSensor A1  // IR sensor uchun pin
-#define vibrationSensorPin A2  // Vibratsiya sensori uchun pin
-
-// Bosh analog pinlar
-#define bosh_A3 A3  // bosh A3 pin
-#define bosh_A4 A4  // bosh A4 pin
-#define bosh_A5 A5  // bosh A5 pin
-#define bosh_A6 A6  // bosh A6 pin
-#define bosh_A7 A7  // bosh A7 pin
-
-// Digital pinlar
->>>>>>> 852de40daca2560578c845f167df61128af302f8:arduino nano/Gaz_havsizlik_qurilmasi_arduino.ino
 #define DHT11_PIN 2  // DHT11 sensorini ulash uchun Arduino pin
 #define relay1 3  // Relay 1 boshqaruv pin
 #define relay2 4  // Relay 2 boshqaruv pin
 #define relay3 5  // Relay 3 boshqaruv pin
 #define relay4 6  // Relay 4 boshqaruv pin
-#define rx_esp 11  // esp rx pin
-<<<<<<< HEAD:arduino nano/Gaz_havsizlik_qurilmasi_arduino/Gaz_havsizlik_qurilmasi_arduino.ino
-#define tx_esp 10 // esp tx pin
-#define rx_A9G 8 // A9G rx pin
-#define tx_A9G 7 //A9G tx pin
+#define rx_esp 7  // esp rx pin
+#define tx_esp 8  // esp tx pin
+#define rx_A9G 9  // A9G rx pin
+#define tx_A9G 10 //A9G tx pin
 #define buzzer 11 // Buzzer uchun pin
 // bosh digital pinlar
-=======
-#define tx_esp 10  // esp tx pin
-#define rx_A9G 8  // A9G rx pin
-#define tx_A9G 7  // A9G tx pin
-#define buzzer 11  // Buzzer uchun pin
-
-// Bosh digital pinlar
->>>>>>> 852de40daca2560578c845f167df61128af302f8:arduino nano/Gaz_havsizlik_qurilmasi_arduino.ino
 #define pin12 12  // bosh pin 12
 #define pin13 13  // bosh pin 13
 
 // Obyektlar
 DHT dht11(DHT11_PIN, DHT11);  // DHT11 obyektini e'lon qilish
 LiquidCrystal_I2C lcd(0x27, 16, 2);  // LCD obyekti
-SoftwareSerial mySerial(8, 9);  // GSM moduli uchun SoftwareSerial obyekti
+SoftwareSerial mySerial(rx_A9G, 10);  // GSM moduli uchun SoftwareSerial obyekti
 SoftwareSerial espSerial(rx_esp, tx_esp);  // ESP moduli uchun SoftwareSerial obyekti
 
 // O'zgaruvchilar
@@ -101,41 +68,10 @@ void setup() {
   delay(1000);
 
   dht11.begin();  // DHT11 sensorini boshlash
-
-
-  if (! rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    while (1);
-  }
-
-  if (! rtc.isrunning()) {
-    Serial.println("RTC is NOT running!");
-    // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-  }
 }
 
 void loop() {
   turnOffRelays();  // Barcha relaylarni o'chirish
-
-
-  DateTime now = rtc.now();
-
-  Serial.print(now.year(), DEC);
-  Serial.print('/');
-  Serial.print(now.month(), DEC);
-  Serial.print('/');
-  Serial.print(now.day(), DEC);
-  Serial.print(' ');
-  Serial.print(now.hour(), DEC);
-  Serial.print(':');
-  Serial.print(now.minute(), DEC);
-  Serial.print(':');
-  Serial.print(now.second(), DEC);
-  Serial.println();
-
-
-  delay(1000);
 
   float humi = dht11.readHumidity();  // Namlikni o'qish
   float tempC = dht11.readTemperature();  // Haroratni o'qish (Selsiy)
@@ -167,7 +103,7 @@ void loop() {
 
   Serial.print("Harorat: ");  // Haroratni chiqarish
   Serial.print(tempC);
-  Serial.println(" *C");
+   Serial.println(" *C");
   Serial.print("Namlik: ");  // Namlikni chiqarish
   Serial.print(humi);
   Serial.println("%");
@@ -207,19 +143,15 @@ void loop() {
 }
 
 void sendSensorDataToESP() {  // Sensor ma'lumotlarini ESP ga yuborish
-  espSerial.print("IR:");
+  espSerial.print("IR:      ");
   espSerial.println(irIntensity);
-  espSerial.print("<br>");
-  espSerial.print("MQ9:");
+  espSerial.print("MQ9:     ");
   espSerial.println(gasConcentration);
-  espSerial.print("<br>");
-  espSerial.print("Harorat:");
+  espSerial.print("Harorat: ");
   espSerial.println(temp);
-  espSerial.print("<br>");
-  espSerial.print("Namlik");
+  espSerial.print("Namlik: ");
   espSerial.println(humidity);
-  espSerial.print("<br>");
-  espSerial.print("Vibratsiya:");
+  espSerial.print("Vibratsiya: ");
   espSerial.println((vibrationValue == HIGH) ? "Aniq" : "Aniq emas");
 }
 
@@ -229,34 +161,13 @@ void turnOffRelays() {  // Barcha relaylarni o'chirish
   digitalWrite(relay3, HIGH);
   digitalWrite(relay4, HIGH);
 }
-void sendSMS(String message) {
-  mySerial.println("AT+CMGF=1"); // Matn rejimiga o'tish
-  delay(1000);
 
-<<<<<<< HEAD:arduino nano/Gaz_havsizlik_qurilmasi_arduino/Gaz_havsizlik_qurilmasi_arduino.ino
-  // Raqamni va buyruqni birlashtirish uchun char massividan foydalanamiz
-  char cmd[50]; // Bu yerda 50 belgini tanlash, ko'pchilik holatlarda yetarli bo'ladi
-  sprintf(cmd, "AT+CMGS=\"%s\"", EMERGENCY_PHONE_NUMBER);
-  mySerial.println(cmd);
+void sendSMS(String message) {  // SMS yuborish
+  mySerial.println("AT+CMGF=1");
   delay(1000);
-  mySerial.print(message); // Xabar matnini yuborish
+  mySerial.println((char)26);
   delay(1000);
-=======
-void sendSMS(String message) {
-  mySerial.println("AT+CMGF=1"); // Matn rejimiga o'tish
-  delay(1000);
-
-  // Raqamni va buyruqni birlashtirish uchun char massividan foydalanamiz
-  char cmd[50]; // Bu yerda 50 belgini tanlash, ko'pchilik holatlarda yetarli bo'ladi
-  sprintf(cmd, "AT+CMGS=\"%s\"", EMERGENCY_PHONE_NUMBER);
-  mySerial.println(cmd);
-  delay(1000);
-  mySerial.print(message); // Xabar matnini yuborish
-  delay(1000);
->>>>>>> 852de40daca2560578c845f167df61128af302f8:arduino nano/Gaz_havsizlik_qurilmasi_arduino.ino
-  mySerial.write(26); // CTRL+Z bilan xabar yuborishni yakunlash
 }
-
 
 void makeCall() {  // Qo'ng'iroq qilish
   mySerial.println("ATD" + String(EMERGENCY_PHONE_NUMBER) + ";");
@@ -264,30 +175,17 @@ void makeCall() {  // Qo'ng'iroq qilish
   mySerial.println("ATH");
 }
 
-void sendLocationAsSMS() {
+void sendLocation() {  // Lokatsiyani yuborish
   mySerial.println("AT+LOCATION=2");
   delay(1000);
-
-  String locationData = "";
   while (mySerial.available()) {
-    char c = mySerial.read();
-    locationData += c;
-  }
-
-  if (locationData.indexOf("+LOCATION: ") >= 0) {
-    String location = locationData.substring(locationData.indexOf("+LOCATION: ") + 11);
-    String longitude = location.substring(0, location.indexOf(","));
-    String latitude = location.substring(location.indexOf(",") + 1, location.indexOf("\r"));
-
-    String message = "Lokatsiya: " + latitude + ", " + longitude;
-    Serial.println(message); // Serial port orqali lokatsiya chiqariladi
-
-    // SMS yuborish
-    mySerial.println("AT+CMGS=\"+998901234567\""); // Belgilangan telefon raqamini kiriting
-    delay(1000);
-    mySerial.println(message); // SMS matni sifatida lokatsiya yuboriladi
-    delay(1000);
-    mySerial.write(26); // SMS yuborishni yakunlash uchun Ctrl+Z belgisini yuborish
+    String location = mySerial.readStringUntil('\n');
+    if (location.indexOf("+LOCATION: ") >= 0) {
+      location = location.substring(location.indexOf("+LOCATION: ") + 11);
+      String longitude = location.substring(0, location.indexOf(","));
+      String latitude = location.substring(location.indexOf(",") + 1);
+      sendSMS("Lokatsiya: " + latitude + ", " + longitude);
+    }
   }
 }
 
@@ -310,7 +208,7 @@ void handleGasConcentration() {  // Gastrafik konsentratsiyani boshqarish
   delay(3000);
   makeCall();
   delay(3000);
-  sendLocationAsSMS();
+  sendLocation();
   turnOffRelays();
 
   if (gasConcentration > threshold) {
@@ -333,7 +231,7 @@ void handleIRIntensity() {  // Infrakras intensivligini boshqarish
   delay(3000);
   makeCall();
   delay(3000);
-  sendLocationAsSMS();
+  sendLocation();
   turnOffRelays();
 
   if (gasConcentration > threshold) {
@@ -356,7 +254,7 @@ void handleVibration() {  // Vibratsiyani boshqarish
   delay(3000);
   makeCall();
   delay(3000);
-  sendLocationAsSMS();
+  sendLocation();
   turnOffRelays();
 
   if (gasConcentration > threshold) {

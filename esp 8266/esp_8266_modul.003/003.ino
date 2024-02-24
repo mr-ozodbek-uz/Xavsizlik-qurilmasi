@@ -1,7 +1,14 @@
+// Bu ozgartirishlaer test jarayonidan otmagan holda qilingan.
+
+
+
+
+
+
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <FS.h> // SPIFFS kutubxonasi uchun
-
+#include <FS.h> // SPIFFS kutubxonasi uchun kerakli bo'lgan kutubxona
+#include <ArduinoJson.h>
 ESP8266WebServer server(80);
 
 const c har* AP_ssid = "ESP8266_AP";
@@ -9,6 +16,16 @@ const char* AP_password = "12345678";
 
 void setup() {
   Serial.begin(115200);
+
+
+    server.on("/relay/on", HTTP_GET, []() {
+        Serial.println("Relay ON command received");
+        server.send(200, "text/plain", "Relay is turned ON");
+    });
+    server.on("/relay/off", HTTP_GET, []() {
+        Serial.println("Relay OFF command received");
+        server.send(200, "text/plain", "Relay is turned OFF");
+    });
 
   if (!SPIFFS.begin()) {
     Serial.println("SPIFFSni boshlashda xato");
@@ -32,11 +49,97 @@ void setup() {
 }
 
 void loop() {
+  if (Serial.available()) {
+    String inputData = Serial.readStringUntil('\n');
+    processReceivedData(inputData); // Ma'lumotlarni qayta ishlash uchun alohida funksiyaga o'tkazish
+  }
   server.handleClient();
+}
+
+
+
+
+void handlerele() {
+    String html = "<!DOCTYPE html><html><head><title>WiFi Scanner & Relay Control</title>"
+                "<script>"
+                "function sendCommand(cmd) {"
+                "  var xhttp = new XMLHttpRequest();"
+                "  xhttp.onreadystatechange = function() {"
+                "    if (this.readyState == 4 && this.status == 200) {"
+                "      console.log(this.responseText);"
+                "    }"
+                "  };"
+                "  xhttp.open('GET', '/relay/' + cmd, true);"
+                "  xhttp.send();"
+                "}"
+                "</script>"
+                "<style>body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; background: #f0f0f0; }"
+                "ul { list-style-type: none; padding: 0; }"
+                "li { background: #0082fc; margin: 20px auto; padding: 10px; border-radius: 5px; color: white; width: 50%; transition: background 0.5s, transform 0.5s; }"
+                "li:hover { background: #0056b3; transform: scale(1.05); }"
+                "a { color: white; text-decoration: none; font-weight: bold; }"
+                "h1 { color: #333; } .navbar { overflow: hidden; background-color: #333; }"
+                ".navbar a { float: left; display: block; color: #f2f2f2; text-align: center; padding: 14px 20px; text-decoration: none; }"
+                ".navbar a:hover { background-color: #ddd; color: black; }</style>"
+                "</head><body>"
+                "<h1>Relay Control & WiFi Scanner</h1>"
+                "<button onclick=\"sendCommand('on')\">Turn Relay ON</button>"
+                "<button onclick=\"sendCommand('off')\">Turn Relay OFF</button>";
+
+    if (WiFi.status() == WL_CONNECTED) {
+        html += "<div><strong>Connected to: </strong>" + WiFi.SSID() + "<br><strong>IP Address: </strong>" + WiFi.localIP().toString() + "</div>";
+    } else {
+        html += "<div>Not connected to any WiFi network</div>";
+    }
+
+    html += "<div class='navbar'><a href='/'>Home</a><a href='/about'>About</a><a href='/statistics'>Statistics</a><a href='/settings'>Settings</a></div><h1>Available WiFi Networks</h1><ul>";
+
+    int n = WiFi.scanNetworks();
+    for (int i = 0; i < n; ++i) {
+        String ssid = WiFi.SSID(i);
+        String ssidEncoded = urlencode(ssid);
+        html += "<li><a href=\"/prompt?ssid=" + ssidEncoded + "\">" + ssid + "</a></li>\n";
+    }
+
+    html += "</ul></body></html>";
+    server.send(200, "text/html", html);
+}
+
+
+
+void processReceivedData(String inputData) {
+  StaticJsonDocument<256> doc;
+  DeserializationError error = deserializeJson(doc, inputData);
+
+  if (error) {
+    Serial.print("deserializeJson() failed: ");
+    Serial.println(error.c_str());
+    return;
+  }
+
+  // JSON ma'lumotlarini o'qish va konsolga chiqarish
+  float irIntensity = doc["IR"];
+  float gasConcentration = doc["MQ9"];
+  float temp = doc["Harorat"];
+  float humidity = doc["Namlik"];
+  String vibration = doc["Vibratsiya"];
+
+  Serial.print("IR Intensity: ");
+  Serial.println(irIntensity);
+  Serial.print("Gas Concentration: ");
+  Serial.println(gasConcentration);
+  Serial.print("Temperature: ");
+  Serial.println(temp);
+  Serial.print("Humidity: ");
+  Serial.println(humidity);
+  Serial.print("Vibration: ");
+  Serial.println(vibration);
 }
 
 void handleRoot() {
   String html = "<html><head><title>WiFi Scanner</title><style>body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; background: #f0f0f0; } ul { list-style-type: none; padding: 0; } li { background: #0082fc; margin: 20px auto; padding: 10px; border-radius: 5px; color: white; width: 50%; transition: background 0.5s, transform 0.5s; } li:hover { background: #0056b3; transform: scale(1.05); } a { color: white; text-decoration: none; font-weight: bold; } h1 { color: #333; } .navbar { overflow: hidden; background-color: #333; } .navbar a { float: left; display: block; color: #f2f2f2; text-align: center; padding: 14px 20px; text-decoration: none; } .navbar a:hover { background-color: #ddd; color: black; }</style></head><body>";
+
+
 
   if (WiFi.status() == WL_CONNECTED) {
     html += "<div><strong>Connected to: </strong>" + WiFi.SSID() + "<br><strong>IP Address: </strong>" + WiFi.localIP().toString() + "</div>";
@@ -44,7 +147,7 @@ void handleRoot() {
     html += "<div>Not connected to any WiFi network</div>";
   }
 
-  html += "<div class='navbar'><a href='/'>Home</a><a href='/about'>About</a><a href='/statistics'>Statistics</a><a href='/settings'>Settings</a></div><h1>Available WiFi Networks</h1><ul>";
+  html += "<div class='navbar'><a href='/'>Home</a><a href='/about'>About</a><a href='/statistics'>Statistics</a><a href='/settings'>Settings</a><a href='/relay/on'>Nazorat</a></div><h1>Available WiFi Networks</h1><ul>";
 
   int n = WiFi.scanNetworks();
   for (int i = 0; i < n; ++i) {
