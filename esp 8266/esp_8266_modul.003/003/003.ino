@@ -4,8 +4,11 @@
 
 ESP8266WebServer server(80);
 
-const c har* AP_ssid = "ESP8266_AP";
+const char* AP_ssid = "ESP8266_AP";
 const char* AP_password = "12345678";
+
+String ssid; // Global variable for ssid
+String password; // Global variable for password
 
 void setup() {
   Serial.begin(115200);
@@ -64,8 +67,8 @@ void handlePrompt() {
 }
 
 void handleConnect() {
-  String ssid = server.arg("ssid");
-  String password = server.arg("password");
+  ssid = server.arg("ssid");
+  password = server.arg("password");
 
   File configFile = SPIFFS.open("/config.txt", "w");
   if (!configFile) {
@@ -116,9 +119,9 @@ void tryConnectWiFi() {
   if (SPIFFS.exists("/config.txt")) {
     File configFile = SPIFFS.open("/config.txt", "r");
     if (configFile) {
-      String ssid = configFile.readStringUntil('\n').c_str();
+      ssid = configFile.readStringUntil('\n').c_str();
       ssid.trim();
-      String password = configFile.readStringUntil('\n').c_str();
+      password = configFile.readStringUntil('\n').c_str();
       password.trim();
 
       WiFi.begin(ssid.c_str(), password.c_str());
@@ -129,7 +132,7 @@ void tryConnectWiFi() {
       while (WiFi.status() != WL_CONNECTED && counter < 30) {
         delay(1000);
         Serial.print(".");
-        counter++;x`
+        counter++;
       }
 
       if (WiFi.status() == WL_CONNECTED) {
@@ -162,12 +165,12 @@ String urlencode(String str) {
     } else {
       code1 = (c & 0xf) + '0';
       if ((c & 0xf) > 9) {
-          code1 = (c & 0xf) - 10 + 'A';
+        code1 = (c & 0xf) - 10 + 'A';
       }
       c = (c >> 4) & 0xf;
       code0 = c + '0';
       if (c > 9) {
-          code0 = c - 10 + 'A';
+        code0= c - 10 + 'A';
       }
       encodedString += '%';
       encodedString += code0;

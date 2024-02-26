@@ -1,8 +1,15 @@
+
 // Kutubxonalar
 #include <Wire.h>  // I2C kommunikatsiyasi uchun kutubxona
 #include <LiquidCrystal_I2C.h>  // I2C orqali LCD ekranini boshqarish uchun kutubxona
 #include <SoftwareSerial.h>  // SoftwareSerial kutubxonasi, bu kutubxona orqali bir nechta serial portlarni ishlatish mumkin
 #include "DHT.h"  // DHT11/DHT22 sensorlarini boshqarish uchun kutubxona
+#include "RTClib.h"
+RTC_DS1307 rtc;
+
+unsigned long lastCheckTime = 0; // Oxirgi tekshiruv vaqti
+const long interval = 3600000; // Tekshiruvlar orasidagi interval (1 soat = 3600000 millisekund)
+
 
 // O'zgaruvchilar va konstantalar
 #define EMERGENCY_PHONE_NUMBER "+998977477616"  // Havfsizlik xabarini yuborish uchun telefon raqami
@@ -59,6 +66,24 @@ void setup() {
   pinMode(relay3, OUTPUT);
   pinMode(relay4, OUTPUT);
 
+if (!rtc.begin()) {
+    lcd.print("RTC topilmadi!");
+    sendErrorToESP("RTC");
+    while (1);
+  }
+
+
+ if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    while (1);
+  }
+
+  if (! rtc.isrunning()) {
+    Serial.println("RTC is NOT running!");
+    // RTC ga 2022 yil 1-yanvar 12:00:00 ni o'rnatamiz
+    rtc.adjust(DateTime(2022, 1, 1, 12, 0, 0));
+  }
+
   Serial.begin(115200);  // Serial kommunikatsiyani boshlash
   lcd.init();  // LCD ekranini ishga tushirish
   lcd.backlight();  // LCD ekranini yoritish
@@ -72,11 +97,36 @@ void setup() {
 
 void loop() {
 
-  
+ unsigned long currentTime = millis();
+  if (currentTime - lastCheckTime >= interval) {
+    // Har bir sensor/modulni tekshirish
+    checkSensorsAndModules();
+
+    lastCheckTime = currentTime; // Oxirgi tekshiruv vaqtini yangilash
+  }
+
+
  digitalWrite(relay1, LOW);
   digitalWrite(relay2, LOW);
   digitalWrite(relay3, LOW);
   digitalWrite(relay4, LOW);
+
+   DateTime now = rtc.now();
+
+  Serial.print(now.year(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print(' ');
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
+  Serial.println();
+
+  delay(1000);
 
 
   float humi = dht11.readHumidity();  // Namlikni o'qish
@@ -148,18 +198,117 @@ void loop() {
   }
 }
 
-void sendSensorDataToESP() {  // Sensor ma'lumotlarini ESP ga yuborish
-  espSerial.print("IR:      ");
-  espSerial.println(irIntensity);
-  espSerial.print("MQ9:     ");
-  espSerial.println(gasConcentration);
-  espSerial.print("Harorat: ");
-  espSerial.println(temp);
-  espSerial.print("Namlik: ");
-  espSerial.println(humidity);
-  espSerial.print("Vibratsiya: ");
-  espSerial.println((vibrationValue == HIGH) ? "Aniq" : "Aniq emas");
+
+void checkSensorsAndModules() {
+  // Bu yerda sensorlar va modullarni tekshirish logikasi joylashadi
+  if (!rtcChecked() || !dhtChecked() || !mq9Checked() || !irChecked() || !vibrationChecked()) {
+    Serial.println("Biror sensor yoki modul ishlamayapti. Tekshiruv yakunlandi.");
+  } else {
+    Serial.println("Barcha sensorlar/modullar ishlamoqda.");
+  }
 }
+
+
+
+bool rtcChecked() {
+  DateTime now = rtc.now();
+  if (now.year() == 2000) { // Agar RTC ishlamasa
+    sendErrorToESP("RTC");
+    return false;
+  }
+  return true;
+}
+
+bool dhtChecked() {
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();
+  if (isnan(humidity) || isnan(temperature)) { // Agar DHT22 ishlamasa
+    sendErrorToESP("DHT22");
+    return false;
+  }
+  return true;
+}
+
+bool mq9Checked() {
+  int mq9Value = analogRead(analogSensor);
+  if (mq9Value <= 0) { // Agar MQ9 ishlamasa
+    sendErrorToESP("MQ9");
+    return false;
+  }
+  return true;
+}
+
+bool irChecked() {
+  int irValue = analogRead(IRSensor);
+  if (irValue <= 0) { // Agar IR sensori ishlamasa
+    sendErrorToESP("IR");
+    return false;
+  }
+  return true;
+}
+
+bool vibrationChecked() {
+  int vibrationValue = analogRead(vibrationSensorPin);
+  if (vibrationValue <= 0) { // Agar vibratsiya sensori ishlamasa
+    sendErrorToESP("Vibration");
+    return false;
+  }
+  return true;
+}
+
+
+
+
+void sendErrorToESP(String sensorName) {
+  String errorMessage = "Error: " + sensorName + " sensor is not working";
+  espSerial.println(errorMessage);
+  Serial.println(errorMessage); // Xatolikni Serial port orqali ham ko'rsatish
+}
+
+// void sendSensorDataToESP() {  // Sensor ma'lumotlarini ESP ga yuborish
+//   espSerial.print("IR:      ");
+//   espSerial.println(irIntensity);
+//   espSerial.print("MQ9:     ");
+//   espSerial.println(gasConcentration);
+//   espSerial.print("Harorat: ");
+//   espSerial.println(temp);
+//   espSerial.print("Namlik: ");
+//   espSerial.println(humidity);
+//   espSerial.print("Vibratsiya: ");
+//   espSerial.println((vibrationValue == HIGH) ? "Aniq" : "Aniq emas");
+// }
+
+void sendSensorDataToESP() {
+  // O'zgaruvchilardan ma'lumotlarni olish
+  int irIntensity = myIrIntensity;
+  float gasConcentration = myGasConcentration;
+  float temp = myTemperature;
+  float humidity = myHumidity;
+  bool vibrationValue = myVibrationValue;
+
+  // Ma'lumotlarni JSON formatida kodlash
+  String jsonData = "{";
+  jsonData += "\"IR\": " + String(irIntensity);
+  jsonData += ", \"MQ9\": " + String(gasConcentration);
+  jsonData += ", \"Harorat\": " + String(temp);
+  jsonData += ", \"Namlik\": " + String(humidity);
+  jsonData += ", \"Vibratsiya\": " + ((vibrationValue == HIGH) ? "\"Aniq\"" : "\"Aniq emas\"");
+  jsonData += "}";
+
+  // Ma'lumotlarni ESP ga yuborish
+  espSerial.println(jsonData);
+
+  // Xato tuzatish uchun CRC32 hisoblash
+  uint32_t crc32 = crc32(jsonData.c_str(), jsonData.length());
+
+  // CRC32 ni JSON ga qo'shish
+  jsonData += ", \"CRC32\": " + String(crc32);
+
+  // Yangilangan JSON ni ESP ga yuborish
+  espSerial.println(jsonData);
+}
+
+
 
 void turnOffRelays() {  // Barcha relaylarni o'chirish
   digitalWrite(relay1, HIGH);
